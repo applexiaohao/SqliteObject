@@ -28,7 +28,21 @@
 + (id)object
 {
     SqliteObject *object = [[self alloc] init];
+    
+
+    
     return [object autorelease];
+}
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        for (NSString *property in self.propertyList) {
+            [self setValue:@"" forKey:property];
+        }
+    }
+    return self;
 }
 
 - (NSMutableArray *)propertyList
@@ -66,6 +80,7 @@
     return _propertyList;
 }
 
+
 //创建数据库表格的SQL
 - (NSString *)createSQL
 {
@@ -75,10 +90,10 @@
     {
         if ([property isEqualToString:@"rowid"])
         {
-            [sql appendFormat:@"%@ integer primary key autoincrement,",property];
+            [sql appendFormat:@"m_%@ integer primary key autoincrement,",property];
             continue;
         }
-        [sql appendFormat:@"%@ text,",property];
+        [sql appendFormat:@"m_%@ text,",property];
     }
     NSRange lastRange = NSMakeRange(sql.length - 1, 1);
     [sql deleteCharactersInRange:lastRange];
@@ -106,7 +121,7 @@
         if ([property isEqualToString:@"rowid"]) {
             continue;
         }
-        [sql appendFormat:@"%@,",property];
+        [sql appendFormat:@"m_%@,",property];
     }
     NSRange lastRange = NSMakeRange(sql.length - 1, 1);
     [sql deleteCharactersInRange:lastRange];
@@ -135,7 +150,7 @@
 {
     NSMutableString *sql = [[NSMutableString alloc] init];
     [sql appendFormat:@"delete from %@ ",NSStringFromClass(self.class)];
-    [sql appendFormat:@"where rowid='%@';",self.rowid];
+    [sql appendFormat:@"where m_rowid='%@';",self.rowid];
     return [sql autorelease];
 }
 - (NSString *)updateSQL
@@ -151,20 +166,38 @@
         if ([property isEqualToString:@"rowid"]) {
             continue;
         }
-        [sql appendFormat:@"%@",property];
+        [sql appendFormat:@"m_%@",property];
         [sql appendFormat:@"="];
         [sql appendFormat:@"%@,",[self valueForKey:property]];
     }
     NSRange lastRange = NSMakeRange(sql.length - 1, 1);
     [sql deleteCharactersInRange:lastRange];
     
-    [sql appendFormat:@" where rowid=%@",self.rowid];
+    [sql appendFormat:@" where m_rowid=%@",self.rowid];
     return [sql autorelease];
 }
 - (NSString *)selectSQL
 {
     NSMutableString *sql = [[NSMutableString alloc] init];
-    [sql appendFormat:@"select * from %@;",NSStringFromClass(self.class)];
+    [sql appendFormat:@"select * from %@",NSStringFromClass(self.class)];
+    [sql appendFormat:@" where 1 "];
+    //添加查询条件
+    for (NSString *property  in self.propertyList) {
+        if ([property isEqualToString:@"propertyList"]) {
+            continue;
+        }
+        if ([[self valueForKey:property] isEqualToString:@""]) {
+            continue;
+        }
+        
+        [sql appendFormat:@"and m_%@",property];
+        [sql appendFormat:@"="];
+        [sql appendFormat:@"%@,",[self valueForKey:property]];
+    }
+    NSRange lastRange = NSMakeRange(sql.length - 1, 1);
+    [sql deleteCharactersInRange:lastRange];
+    
+    
     return [sql autorelease];
 }
 

@@ -8,7 +8,6 @@
 
 #import "SqliteManager.h"
 #import <sqlite3.h>
-#import "Person.h"
 
 static inline NSString *toto(const char *pStr)
 {
@@ -33,9 +32,14 @@ static inline NSString *toto(const char *pStr)
 {
     //获取Document文件夹路径
     NSString *documentPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-#define kSqliteName  @"custom.sqlite"
+    
+    //
+    NSBundle*bundle =[NSBundle mainBundle];
+    NSDictionary*info =[bundle infoDictionary];
+    NSString*prodName =[info objectForKey:@"CFBundleDisplayName"];
+    
     //获取数据库文件的路径
-    NSString *sqlitePath = [documentPath stringByAppendingFormat:@"/%@",kSqliteName];
+    NSString *sqlitePath = [documentPath stringByAppendingFormat:@"/%@.sqlite",prodName];
     //使用函数打开数据，并且将数据库对象赋值给database
     sqlite3_open([sqlitePath UTF8String], &database);
 }
@@ -130,6 +134,9 @@ static SqliteManager *s_SqliteManager = nil;
         for (NSInteger index = 0; index < columnCount; index ++) {
             NSString *value = toto((const char *)sqlite3_column_text(statement, index));
             NSString *key = toto((const char *)sqlite3_column_name(statement, index));
+            
+            NSLog(@"%@",key);
+            key = [key substringFromIndex:2];
             [item setValue:value forKey:key];
         }
         [resultList addObject:item];
